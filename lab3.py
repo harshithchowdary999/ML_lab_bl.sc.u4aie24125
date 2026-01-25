@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -56,10 +57,12 @@ def custom_knn_predict(X_train, y_train, test_vec, k):
         d = minkowski_distance(X_train[i], test_vec, 2)
         distances.append((d, y_train[i]))
     distances.sort(key=lambda x: x[0])
+
     neighbors = distances[:k]
     votes = {}
     for _, label in neighbors:
         votes[label] = votes.get(label, 0) + 1
+
     return max(votes, key=votes.get)
 
 def custom_knn_accuracy(X_train, X_test, y_train, y_test, k):
@@ -91,12 +94,13 @@ def performance_metrics(TP, FP, FN, TN):
     return accuracy, precision, recall, f1
 
 def main():
-    np.random.seed(0)
-    X = np.random.rand(100, 4)
-    y = np.array([0]*50 + [1]*50)
+    data = pd.read_csv("cmu_mosi_numeric.csv")
+    X = data.iloc[:, :-1].values
+    y = data.iloc[:, -1].values
 
     A = X[0]
     B = X[1]
+
     print(evaluate_vectors(A, B))
 
     X0 = X[y == 0]
@@ -104,30 +108,38 @@ def main():
 
     mean0, std0 = dataset_stats(X0)
     mean1, std1 = dataset_stats(X1)
+
     print(np.linalg.norm(mean0 - mean1))
 
     hist, bins, mu, var = feature_histogram(X[:, 0])
     print(mu, var)
+
     plt.hist(X[:, 0], bins=10)
     plt.show()
 
     dist = []
     for p in range(1, 11):
         dist.append(minkowski_distance(A, B, p))
+
     plt.plot(range(1, 11), dist)
     plt.show()
+
     print(minkowski(A, B, 2))
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42
+    )
 
     neigh = KNeighborsClassifier(n_neighbors=3)
     neigh.fit(X_train, y_train)
     print(neigh.score(X_test, y_test))
+
     y_pred = neigh.predict(X_test)
 
     acc = []
     for k in range(1, 12):
         acc.append(custom_knn_accuracy(X_train, X_test, y_train, y_test, k))
+
     plt.plot(range(1, 12), acc)
     plt.show()
 
